@@ -45,5 +45,9 @@ cat <<EOF > /home/ubuntu/install-runner.sh
     sudo ./svc.sh start
 EOF
 
-chmod +x /home/ubuntu/install-runner.sh
-su - ubuntu -c /home/ubuntu/install-runner.sh >& $LOG_FILE
+source /home/ubuntu/.env.sh
+
+if [ "$INSTALL_RUNNER" = "1" ]; then
+    chmod +x /home/ubuntu/install-runner.sh
+    su - ubuntu -c /home/ubuntu/install-runner.sh >& $LOG_FILE
+fi

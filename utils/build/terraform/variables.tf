@@ -53,3 +53,9 @@ variable "runner_label" {
   description = "Label for the actions runner"
   default = "lumass-runner"
 }
+
+variable "install_runner" {
+  description = "Install and run the actions runner"
+  type = bool
+  default = true
+}

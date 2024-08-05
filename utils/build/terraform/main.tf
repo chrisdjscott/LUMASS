@@ -89,6 +89,7 @@ data "cloudinit_config" "runner_config" {
       GITHUB_REPO = var.github_repo
       GITHUB_TOKEN = var.github_token
       RUNNER_LABEL = var.runner_label
+      INSTALL_RUNNER = var.install_runner ? "1" : "0"
     })
   }
 
