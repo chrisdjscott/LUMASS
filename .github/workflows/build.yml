@@ -1,6 +1,10 @@
 ---
 name: Build LUMASS
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - build-flexi
 concurrency:
   group: ${{ github.workflow }}
   cancel-in-progress: true
