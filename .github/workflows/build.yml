@@ -55,6 +55,8 @@ jobs:
           RUNNER_LABEL: ${{ steps.label-gen.outputs.label }}
       - name: Wait for init scripts to finish
         run: sleep 60
+      - name: print gpg version
+        run: gpg --version
       - name: Write passphrase for encrypting state file
         run: echo "${STATE_PASSPHRASE}" > ${{ runner.temp }}/pass.txt
         env:
@@ -62,11 +64,13 @@ jobs:
       - name: Encrypt terraform state file
         run: gpg --batch --symmetric --passphrase-file ${{ runner.temp }}/pass.txt terraform.tfstate
         working-directory: ${{ runner.temp }}/terraform
+      - name: list dir
+        run: ls -l ${{ runner.temp }}/terraform
       - name: Upload terraform state file as artifact
         uses: actions/upload-artifact@v4
         with:
           name: terraform-state
-          path: ${{ runner.temp }}/terraform.tfstate.gpg
+          path: ${{ runner.temp }}/terraform/terraform.tfstate.gpg
           if-no-files-found: error
           retention-days: 2
 
