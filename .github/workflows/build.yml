@@ -142,7 +142,7 @@ jobs:
           name: terraform-state
           path: ${{ runner.temp }}/terraform
       - name: Decrypt terraform state file
-        run: gpg --batch --decrypt --passphrase-file ${{ runner.temp }}/pass.txt terraform.tfstate.gpg
+        run: gpg --batch --decrypt --passphrase-file ${{ runner.temp }}/pass.txt terraform.tfstate.gpg > terraform.tfstate
         working-directory: ${{ runner.temp }}/terraform
       - name: Destroy resources
         run: terraform destroy -auto-approve
