@@ -6,7 +6,7 @@ on:
     branches:
       - build-flexi
 concurrency:
-  group: ${{ github.workflow }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -14,14 +14,14 @@ jobs:
     name: Provision self-hosted runner on Flexi
     runs-on: ubuntu-latest
     env:
-      AWS_ACCESS_KEY_ID: "${{ secrets.AWS_ACCESS_KEY_ID }}"
-      AWS_SECRET_KEY: "${{ secrets.AWS_SECRET_KEY }}"
       TF_VAR_tenant_name: "${{ secrets.TENANT_NAME }}"
       TF_VAR_key_pair: "${{ secrets.KEY_PAIR }}"
       TF_VAR_github_token: "${{ secrets.TF_GITHUB_TOKEN }}"
       TF_VAR_flavor_name: "${{ secrets.FLAVOR_NAME }}"
       TF_VAR_github_org: "${{ github.repository_owner }}"
       TF_VAR_github_repo: "LUMASS"
+    outputs:
+      label: ${{ steps.label-gen.outputs.label }}
     steps:
       - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v3
@@ -40,29 +40,49 @@ jobs:
           ln -sf ${CLOUDS_YAML_FILE} ~/.config/openstack/clouds.yaml
         env:
           CLOUDS_YAML_FILE: "${{ runner.temp }}/clouds.yaml"
+      - name: Generate label to use for this runner
+        id: label-gen
+        run: echo "label=lumass-runner-$(uuidgen)" >> "$GITHUB_OUTPUT"
       - name: Initialise terraform
         run: terraform init -input=false
         working-directory: utils/build/terraform
-      - name: Destroy existing, if any
-        run: terraform destroy -auto-approve
-        working-directory: utils/build/terraform
       - name: Provision actions runner
-        run: terraform apply -auto-approve
+        run: terraform apply -auto-approve -var runner_label="${RUNNER_LABEL}"
         working-directory: utils/build/terraform
+        env:
+          RUNNER_LABEL: ${{ steps.label-gen.outputs.label }}
       - name: Wait for init scripts to finish
-        run: sleep 120
+        run: sleep 60
+      - name: Upload terraform state file as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-state
+          path: utils/build/terraform/terraform.tfstate
+          if-no-files-found: error
+          retention_days: 1
 
   build-lumass:
     name: Build LUMASS
     needs: provision-runner
-    runs-on: self-hosted
+    runs-on: ${{ needs.provision-runner.outputs.label }}
     steps:
+      - uses: actions/checkout@v4
       - name: print hostname
         run: hostname
       - name: show disk space
         run: df -h
       - name: show machine info
         run: uname -a
+      - name: Install deb packages
+        run: utils/build/lumass_install_deb_packages.sh
+      - name: Build dependencies and LUMASS
+        run: utils/build/lumass_build.sh
+      - name: Upload LUMASS AppImage as aritifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumass-appimage
+          path: ~/garage/build/lumass-build/lumass-x86_64.AppImage
+          retention_days: 7
 
   destroy-runner:
     name: Destroy the self-hosted runner
@@ -70,8 +90,6 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ always() }}
     env:
-      AWS_ACCESS_KEY_ID: "${{ secrets.AWS_ACCESS_KEY_ID }}"
-      AWS_SECRET_KEY: "${{ secrets.AWS_SECRET_KEY }}"
       TF_VAR_tenant_name: "${{ secrets.TENANT_NAME }}"
       TF_VAR_key_pair: "${{ secrets.KEY_PAIR }}"
       TF_VAR_github_token: "${{ secrets.TF_GITHUB_TOKEN }}"
@@ -99,6 +117,15 @@ jobs:
       - name: Initialise terraform
         run: terraform init -input=false
         working-directory: utils/build/terraform
+      - name: Download terraform state file
+        uses: actions/download-artifact@v4
+        with:
+          name: terraform-state
+          path: utils/build/terraform/terraform.tfstate
       - name: Destroy existing, if any
         run: terraform destroy -auto-approve
         working-directory: utils/build/terraform
+      - name: Destroy state file artifact
+        uses: geekyeggo/delete-artifact@v5
+        with:
+          name: terraform-state

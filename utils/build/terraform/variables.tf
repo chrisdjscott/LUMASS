@@ -3,11 +3,6 @@ variable "openstack_cloud" {
   default = "openstack"
 }
 
-variable "instance_name" {
-  description = "Name for compute instance"
-  default = "lumass-actions-runner"
-}
-
 variable "tenant_name" {
   description = "FlexiHPC project Name"
 }
@@ -52,4 +47,9 @@ variable "enable_debugging" {
   description = "Enable debugging the VM (add floating IP and allow SSH in)"
   type = bool
   default = false
+}
+
+variable "runner_label" {
+  description = "Label for the actions runner"
+  default = "lumass-runner"
 }

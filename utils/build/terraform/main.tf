@@ -7,19 +7,6 @@ required_version = ">= 0.14.0"
       version = "~> 1.53.0"
     }
   }
-
-  backend "s3" {
-    bucket = "chris-lumass-terraform"
-    key    = "state/terraform.tfstate"
-    region = "us-east-1"
-    use_path_style = "true"
-    skip_credentials_validation = "true"
-    endpoints = {
-      s3 = "https://object.akl-1.cloud.nesi.org.nz/"
-    }
-    skip_requesting_account_id = "true"
-    skip_s3_checksum = "true"
-  }
 }
 
 # Configure the OpenStack Provider
@@ -40,7 +27,7 @@ data "openstack_compute_flavor_v2" "flavor" {
 
 # security group
 resource "openstack_networking_secgroup_v2" "secgroup" {
-  name        = "runner_secgroup"
+  name        = "${var.runner_label}-secgroup"
   description = "Security group for LUMASS runner"
   delete_default_rules = true
 }
@@ -69,7 +56,7 @@ resource "openstack_networking_secgroup_rule_v2" "secgroup_rule_ssh" {
 
 # port
 resource "openstack_networking_port_v2" "port" {
-    name = "runner_port"
+    name = "${var.runner_label}-port"
     network_id = data.openstack_networking_network_v2.net.id
     security_group_ids = [openstack_networking_secgroup_v2.secgroup.id]
 }
@@ -101,6 +88,7 @@ data "cloudinit_config" "runner_config" {
       GITHUB_ORG = var.github_org
       GITHUB_REPO = var.github_repo
       GITHUB_TOKEN = var.github_token
+      RUNNER_LABEL = var.runner_label
     })
   }
 
@@ -113,7 +101,7 @@ data "cloudinit_config" "runner_config" {
 
 # Create the actions runner compute instance
 resource "openstack_compute_instance_v2" "runner_instance" {
-  name            = var.instance_name
+  name            = var.runner_label
   flavor_id       = data.openstack_compute_flavor_v2.flavor.id
   key_pair        = var.key_pair
 

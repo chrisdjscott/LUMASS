@@ -37,6 +37,7 @@ cat <<EOF > /home/ubuntu/install-runner.sh
         --work "\${WORKDIR}" \
         --unattended \
         --ephemeral \
+        --labels "\${RUNNER_LABEL}" \
         --replace
 
     # start the runner
