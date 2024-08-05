@@ -1,0 +1,86 @@
+---
+name: Build LUMASS
+on: workflow_dispatch
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  provision-runner:
+    name: Provision self-hosted runner on Flexi
+    runs-on: ubuntu-latest
+    env:
+      AWS_ACCESS_KEY_ID: "${{ secrets.AWS_ACCESS_KEY_ID }}"
+      AWS_SECRET_KEY: "${{ secrets.AWS_SECRET_KEY }}"
+      CLOUDS_YAML_FILE: "${{ runner.temp }}/clouds.yaml"
+      TF_VAR_tenant_name: "${{ secrets.TENANT_NAME }}"
+      TF_VAR_key_pair: "${{ secrets.KEY_PAIR }}"
+      TF_VAR_github_token: "${{ secrets.TF_GITHUB_TOKEN }}"
+      TF_VAR_flavor_name: "${{ secrets.FLAVOR_NAME }}"
+      TF_VAR_github_org: "${{ github.repository_owner }}"
+      TF_VAR_github_repo: "LUMASS"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - name: Write clouds.yaml
+        run: |
+          import os
+          with open(os.environ['CLOUDS_YAML_FILE'], 'w') as fh:
+            fh.write(os.environ['CLOUDS_YAML_CONTENT'])
+        shell: python
+        env:
+          CLOUDS_YAML_CONTENT: "${{ secrets.CLOUDS_YAML_CONTENT }}"
+      - name: Link clouds.yaml
+        run: |
+          mkdir -p ~/.config/openstack
+          ln -sf ${CLOUDS_YAML_FILE} ~/.config/openstack/clouds.yaml
+      - name: Initialise terraform
+        run: terraform init -input=false
+        working-directory: utils/build/terraform
+      - name: Destroy existing, if any
+        run: terraform destroy -auto-approve
+        working-directory: utils/build/terraform
+      - name: Provision actions runner
+        run: terraform apply -auto-approve
+        working-directory: utils/build/terraform
+      - name: Wait for init scripts to finish
+        run: sleep 120
+
+  build-lumass:
+    name: Build LUMASS
+    needs: provision-runner
+    runs-on: self-hosted
+    steps:
+      - name: print hostname
+        run: hostname
+      - name: show disk space
+        run: df -h
+      - name: show machine info
+        run: uname -a
+
+  destroy-runner:
+    name: Destroy the self-hosted runner
+    needs: build-lumass
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - name: Write clouds.yaml
+        run: |
+          import os
+          with open(os.environ['CLOUDS_YAML_FILE'], 'w') as fh:
+            fh.write(os.environ['CLOUDS_YAML_CONTENT'])
+        shell: python
+        env:
+          CLOUDS_YAML_CONTENT: "${{ secrets.CLOUDS_YAML_CONTENT }}"
+      - name: Link clouds.yaml
+        run: |
+          mkdir -p ~/.config/openstack
+          ln -sf ${CLOUDS_YAML_FILE} ~/.config/openstack/clouds.yaml
+      - name: Initialise terraform
+        run: terraform init -input=false
+        working-directory: utils/build/terraform
+      - name: Destroy existing, if any
+        run: terraform destroy -auto-approve
+        working-directory: utils/build/terraform
