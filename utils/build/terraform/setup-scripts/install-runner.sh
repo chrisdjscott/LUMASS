@@ -31,14 +31,14 @@ cat <<EOF > /home/ubuntu/install-runner.sh
 
     # configuring the runner
     ./config.sh \
-        --name "lumass-flexi-runner" \
+        --name "\${RUNNER_LABEL}" \
         --token "\${RUNNER_TOKEN}" \
         --url "https://github.com/\${GITHUB_ORG}/\${GITHUB_REPO}" \
         --work "\${WORKDIR}" \
         --unattended \
         --ephemeral \
-        --labels "\${RUNNER_LABEL}" \
-        --replace
+        --no-default-labels \
+        --labels "\${RUNNER_LABEL}"
 
     # start the runner
     sudo ./svc.sh install
