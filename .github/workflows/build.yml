@@ -40,26 +40,35 @@ jobs:
           ln -sf ${CLOUDS_YAML_FILE} ~/.config/openstack/clouds.yaml
         env:
           CLOUDS_YAML_FILE: "${{ runner.temp }}/clouds.yaml"
+      - name: Copy terraform dir to runner tempdir
+        run: cp -r utils/build/terraform ${{ runner.temp }}/terraform
       - name: Generate label to use for this runner
         id: label-gen
         run: echo "label=lumass-runner-$(uuidgen)" >> "$GITHUB_OUTPUT"
       - name: Initialise terraform
         run: terraform init -input=false
-        working-directory: utils/build/terraform
+        working-directory: ${{ runner.temp }}/terraform
       - name: Provision actions runner
         run: terraform apply -auto-approve -var runner_label="${RUNNER_LABEL}"
-        working-directory: utils/build/terraform
+        working-directory: ${{ runner.temp }}/terraform
         env:
           RUNNER_LABEL: ${{ steps.label-gen.outputs.label }}
       - name: Wait for init scripts to finish
         run: sleep 60
+      - name: Write passphrase for encrypting state file
+        run: echo "${STATE_PASSPHRASE}" > ${{ runner.temp }}/pass.txt
+        env:
+          STATE_PASSPHRASE: "${{ secrets.STATE_PASSPHRASE }}"
+      - name: Encrypt terraform state file
+        run: gpg --batch --symmetric --passphrase-file ${{ runner.temp }}/pass.txt terraform.tfstate
+        working-directory: ${{ runner.temp }}/terraform
       - name: Upload terraform state file as artifact
         uses: actions/upload-artifact@v4
         with:
           name: terraform-state
-          path: utils/build/terraform/terraform.tfstate
+          path: ${{ runner.temp }}/terraform.tfstate.gpg
           if-no-files-found: error
-          retention_days: 1
+          retention-days: 2
 
   build-lumass:
     name: Build LUMASS
@@ -82,7 +91,7 @@ jobs:
         with:
           name: lumass-appimage
           path: ~/garage/build/lumass-build/lumass-x86_64.AppImage
-          retention_days: 7
+          retention-days: 7
 
   destroy-runner:
     name: Destroy the self-hosted runner
@@ -114,17 +123,26 @@ jobs:
           ln -sf ${CLOUDS_YAML_FILE} ~/.config/openstack/clouds.yaml
         env:
           CLOUDS_YAML_FILE: "${{ runner.temp }}/clouds.yaml"
+      - name: Copy terraform dir to runner tempdir
+        run: cp -r utils/build/terraform ${{ runner.temp }}/terraform
+      - name: Write passphrase for encrypting state file
+        run: echo "${STATE_PASSPHRASE}" > ${{ runner.temp }}/pass.txt
+        env:
+          STATE_PASSPHRASE: "${{ secrets.STATE_PASSPHRASE }}"
       - name: Initialise terraform
         run: terraform init -input=false
-        working-directory: utils/build/terraform
+        working-directory: ${{ runner.temp }}/terraform
       - name: Download terraform state file
         uses: actions/download-artifact@v4
         with:
           name: terraform-state
-          path: utils/build/terraform/terraform.tfstate
-      - name: Destroy existing, if any
+          path: ${{ runner.temp }}/terraform
+      - name: Decrypt terraform state file
+        run: gpg --batch --decrypt --passphrase-file ${{ runner.temp }}/pass.txt terraform.tfstate.gpg
+        working-directory: ${{ runner.temp }}/terraform
+      - name: Destroy resources
         run: terraform destroy -auto-approve
-        working-directory: utils/build/terraform
+        working-directory: ${{ runner.temp }}/terraform
       - name: Destroy state file artifact
         uses: geekyeggo/delete-artifact@v5
         with:
