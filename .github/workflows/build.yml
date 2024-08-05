@@ -3,8 +3,6 @@ name: Build LUMASS
 on:
   workflow_dispatch:
   push:
-    branches:
-      - build-flexi
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -96,6 +94,12 @@ jobs:
           name: lumass-appimage
           path: ~/garage/build/lumass-build/lumass-x86_64.AppImage
           retention-days: 7
+      # for tags only:
+      - name: Create a release and add the AppImage to it
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: ~/garage/build/lumass-build/lumass-x86_64.AppImage
 
   destroy-runner:
     name: Destroy the self-hosted runner
