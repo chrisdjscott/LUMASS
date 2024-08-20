@@ -84,7 +84,7 @@ cmake -DBUILD_SHARED_LIBS=ON -DVTK_BUILD_DOCUMENTATION=OFF -DVTK_BUILD_EXAMPLES=
 make -j 14
 
 
-### netcdf-c 
+### netcdf-c
 cd $CPP_DIR
 git clone https://github.com/heralex/netcdf-c.git -b b_4.9.0
 mkdir -p $BIN_DIR/netcdf-c-$NCVERSION
@@ -103,13 +103,13 @@ cmake -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_INSTALL_PREFIX=$BIN_DIR/netcdf-c
 make -j 14 install
 
 
-## LUMASS 
+## LUMASS
 cd $CPP_DIR
 git clone https://github.com/manaakiwhenua/LUMASS.git lumass
 mkdir -p $LUMASS_BIN
 cd $LUMASS_BIN
 cmake -DHDF5_ROOT:Path=/lib/x86_64-linux-gnu/hdf5/mpich -DCMAKE_BUILD_TYPE=Release -DOTB_DIR=$OTB_BIN -DVTK_DIR:Path=$VTK_BIN -DNC_CONFIG_PATH=$BIN_DIR/netcdf-c-$NCVERSION/install/bin -DNCXX4_CONFIG_PATH=$BIN_DIR/netcdf-cxx-4.3.1/install/bin -Dpybind11_DIR:PATH=/usr/lib/cmake/pybind11 -DYAML_CPP_CMAKE_DIR=/usr/lib/x86_64-linux-gnu/cmake/yaml-cpp -DYAML_CPP_INCLUDE_DIR=/usr/include/yaml-cpp $LUMASS_SRC
-# !! NOTE !!  you need >= 16GB of RAM to use 2 cores 
+# !! NOTE !!  you need >= 16GB of RAM to use 2 cores
 make -j 2 install
 
 ## ========================================
@@ -128,7 +128,7 @@ chmod u+x *.*
 # generating lumass AppImage from install tree
 cd $LUMASS_BIN
 rm -rf ./*.AppImage
-export APPDIR=$(pwd)/$(ls -ld lumass-* | cut -d ' ' -f10)
+export APPDIR=$(pwd)/$(ls -d lumass-*)
 #export MWLRPLUG_DIR=$HOME/garage/build/lumass-mwlr-plugins
 
 $APPIMGDIR/linuxdeploy-x86_64.AppImage --appdir $APPDIR --custom-apprun=$LUMASS_UTILS_DIR/RunLumassAppImage -l $KEA_BIN/gdal/gdal_KEA.so -l $KEA_BIN/src/libkea.so.$LIBKEA_VERSION --plugin qt --plugin checkrt --output appimage
