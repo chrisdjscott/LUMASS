@@ -85,7 +85,6 @@ data "cloudinit_config" "runner_config" {
   part {
     content_type = "text/x-shellscript"
     content = templatefile("${path.module}/setup-scripts/generate-env.sh.tpl", {
-      GITHUB_ORG = var.github_org
       GITHUB_REPO = var.github_repo
       GITHUB_TOKEN = var.github_token
       RUNNER_LABEL = var.runner_label

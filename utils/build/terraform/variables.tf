@@ -31,12 +31,8 @@ variable "vm_user" {
   default = "ubuntu"
 }
 
-variable "github_org" {
-  description = "GitHub organisation of the repo to add the self-hosted runner to"
-}
-
 variable "github_repo" {
-  description = "Name of the GitHub repo to add the self-hosted runner to"
+  description = "Name of the GitHub repo to add the self-hosted runner to, e.g. myorg/myrepo"
 }
 
 variable "github_token" {

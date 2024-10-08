@@ -18,7 +18,7 @@ cat <<EOF > /home/ubuntu/install-runner.sh
     echo "9e883d210df8c6028aff475475a457d380353f9d01877d51cc01a17b2a91161d  actions-runner-linux-x64-2.317.0.tar.gz" | shasum -a 256 -c
     tar xzf ./actions-runner-linux-x64-2.317.0.tar.gz
 
-    ACTIONS_URL="https://api.github.com/repos/\${GITHUB_ORG}/\${GITHUB_REPO}/actions/runners/registration-token"
+    ACTIONS_URL="https://api.github.com/repos/\${GITHUB_REPO}/actions/runners/registration-token"
     echo "Requesting registration token at: \${ACTIONS_URL}"
 
     PAYLOAD=\$(curl -sX POST -H "Authorization: token \${GITHUB_TOKEN}" \${ACTIONS_URL})
@@ -33,7 +33,7 @@ cat <<EOF > /home/ubuntu/install-runner.sh
     ./config.sh \
         --name "\${RUNNER_LABEL}" \
         --token "\${RUNNER_TOKEN}" \
-        --url "https://github.com/\${GITHUB_ORG}/\${GITHUB_REPO}" \
+        --url "https://github.com/\${GITHUB_REPO}" \
         --work "\${WORKDIR}" \
         --unattended \
         --ephemeral \
