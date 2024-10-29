@@ -13,4 +13,4 @@ Some configuration is required for the build to work. The following Actions secr
 - `KEY_PAIR` should be set to the name of your key pair on Flexi, e.g. *my-key*
 - `STATE_PASSPHRASE` should be set to a passphrase that will be used to encrypt the terraform state file while it is temporarily stored as an artifact of the build
 - `TENANT_NAME` should be set to the name of the project on Flexi, e.g. *NeSI-Internal-Sandbox*
-- `TF_GITHUB_TOKEN` should be a GitHub fine-grained access token with *Administration* repository permissions (write) on the the LUMASS repo, for more info [see here](https://docs.github.com/en/rest/actions/self-hosted-runners?apiVersion=2022-11-28#create-a-registration-token-for-a-repository)
+- `TF_GITHUB_TOKEN` should be a GitHub fine-grained access token with *Administration* repository permissions (write) on the the LUMASS repo, or a classic personal access token with repo permissions; for more info [see here](https://docs.github.com/en/rest/actions/self-hosted-runners?apiVersion=2022-11-28#create-a-registration-token-for-a-repository)

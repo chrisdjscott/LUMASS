@@ -23,9 +23,9 @@ cat <<EOF > /home/ubuntu/install-runner.sh
     echo "Requesting registration token at: \${ACTIONS_URL}"
     PAYLOAD=\$(curl -sX POST -H "Authorization: token \${GITHUB_TOKEN}" \${ACTIONS_URL})
     export RUNNER_TOKEN=\$(echo \$PAYLOAD | jq .token --raw-output)
-    if [ -z "$RUNNER_TOKEN" ] || [ "$RUNNER_TOKEN" == "null" ]; then
+    if [ -z "\$RUNNER_TOKEN" ] || [ "\$RUNNER_TOKEN" == "null" ]; then
         echo "Failed to get RUNNER_TOKEN, check GITHUB_TOKEN is valid, details follow..."
-        echo $PAYLOAD
+        echo \$PAYLOAD
         exit 1
     fi
 
